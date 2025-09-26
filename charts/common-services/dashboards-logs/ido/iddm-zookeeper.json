@@ -1,0 +1,364 @@
+{
+  "annotations": {
+    "list": [
+      {
+        "builtIn": 1,
+        "datasource": {
+          "type": "grafana",
+          "uid": "-- Grafana --"
+        },
+        "enable": true,
+        "hide": true,
+        "iconColor": "rgba(0, 211, 255, 1)",
+        "name": "Annotations & Alerts",
+        "type": "dashboard"
+      }
+    ]
+  },
+  "description": "Alert Center logs",
+  "editable": true,
+  "fiscalYearStartMonth": 0,
+  "graphTooltip": 0,
+  "id": null,
+  "links": [
+    {
+      "asDropdown": true,
+      "icon": "external link",
+      "includeVars": true,
+      "keepTime": true,
+      "tags": [
+        "identity-observability",
+        "logging",
+        "iddm"
+      ],
+      "targetBlank": false,
+      "title": "ID Sync Config",
+      "tooltip": "",
+      "type": "dashboards",
+      "url": ""
+    }
+  ],
+  "liveNow": true,
+  "panels": [
+    {
+      "datasource": {
+        "type": "loki",
+        "uid": "${DS_LOKI}"
+      },
+      "description": "Show all logs from ID Sync Config Zookeeper",
+      "fieldConfig": {
+        "defaults": {
+          "custom": {
+            "align": "auto",
+            "cellOptions": {
+              "type": "auto",
+              "wrapText": true
+            },
+            "filterable": true,
+            "inspect": false
+          },
+          "mappings": [
+            {
+              "options": {
+                "DEBUG": {
+                  "color": "transparent",
+                  "index": 3
+                },
+                "ERROR": {
+                  "color": "dark-red",
+                  "index": 0
+                },
+                "INFO": {
+                  "color": "transparent",
+                  "index": 2
+                },
+                "TRACE": {
+                  "color": "transparent",
+                  "index": 4
+                },
+                "WARN": {
+                  "color": "dark-yellow",
+                  "index": 1
+                }
+              },
+              "type": "value"
+            }
+          ],
+          "noValue": "No data - check time range",
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              {
+                "color": "green",
+                "value": 0
+              },
+              {
+                "color": "red",
+                "value": 80
+              }
+            ]
+          }
+        },
+        "overrides": [
+          {
+            "matcher": {
+              "id": "byName",
+              "options": "Time"
+            },
+            "properties": [
+              {
+                "id": "custom.width",
+                "value": 197
+              }
+            ]
+          },
+          {
+            "matcher": {
+              "id": "byName",
+              "options": "Level"
+            },
+            "properties": [
+              {
+                "id": "custom.width",
+                "value": 99
+              },
+              {
+                "id": "custom.cellOptions",
+                "value": {
+                  "applyToRow": true,
+                  "mode": "gradient",
+                  "type": "color-background"
+                }
+              }
+            ]
+          },
+          {
+            "matcher": {
+              "id": "byName",
+              "options": "Logger"
+            },
+            "properties": [
+              {
+                "id": "custom.width",
+                "value": 269
+              }
+            ]
+          },
+          {
+            "matcher": {
+              "id": "byName",
+              "options": "Component"
+            },
+            "properties": [
+              {
+                "id": "custom.width",
+                "value": 251
+              }
+            ]
+          },
+          {
+            "matcher": {
+              "id": "byName",
+              "options": "pod"
+            },
+            "properties": [
+              {
+                "id": "custom.width",
+                "value": 133
+              }
+            ]
+          }
+        ]
+      },
+      "gridPos": {
+        "h": 23,
+        "w": 24,
+        "x": 0,
+        "y": 0
+      },
+      "id": 1,
+      "options": {
+        "cellHeight": "sm",
+        "footer": {
+          "countRows": false,
+          "enablePagination": true,
+          "fields": "",
+          "reducer": [
+            "sum"
+          ],
+          "show": false
+        },
+        "showHeader": true,
+        "sortBy": []
+      },
+      "pluginVersion": "12.1.0",
+      "targets": [
+        {
+          "datasource": {
+            "type": "loki",
+            "uid": "${DS_LOKI}"
+          },
+          "direction": "backward",
+          "editorMode": "code",
+          "expr": "{app=\"$application\", environment=\"$environment\", component=\"zookeeper\"}",
+          "key": "Q-8ecbdd88-d655-4837-968a-007a7fae03b2-0",
+          "queryType": "range",
+          "refId": "logs"
+        }
+      ],
+      "transformations": [
+        {
+          "id": "extractFields",
+          "options": {
+            "source": "labels"
+          }
+        },
+        {
+          "id": "extractFields",
+          "options": {
+            "delimiter": ",",
+            "format": "regexp",
+            "regExp": "/(?<timestamp>\\d{4}-\\d{2}-\\d{2}T\\d{2}:\\d{2}:\\d{2},\\d+)\\s+\\[myid:(?<myid>\\d+)\\]\\s+-\\s+(?<level>\\w+)\\s+\\[(?<source>[^\\]]+)\\]\\s+-\\s+(?<message>.+)/",
+            "source": "Line"
+          }
+        },
+        {
+          "id": "organize",
+          "options": {
+            "excludeByName": {},
+            "includeByName": {
+              "Line": false,
+              "Time": true,
+              "app": false,
+              "component": false,
+              "component_extracted": true,
+              "level": true,
+              "loggerName": false,
+              "loggerName 2": false,
+              "message": true,
+              "pod": true,
+              "portalInstance": false,
+              "shortLogger": true,
+              "source": false,
+              "tenant": false
+            },
+            "indexByName": {
+              "Line": 6,
+              "Time": 0,
+              "app": 4,
+              "component": 10,
+              "container": 11,
+              "detected_level": 12,
+              "id": 9,
+              "instance": 13,
+              "job": 14,
+              "labelTypes": 8,
+              "labels": 5,
+              "level": 2,
+              "message": 22,
+              "myid": 20,
+              "namespace": 15,
+              "node_name": 16,
+              "pod": 1,
+              "service_name": 17,
+              "source": 21,
+              "tenant": 3,
+              "timestamp": 19,
+              "tsNs": 7,
+              "version": 18
+            },
+            "renameByName": {
+              "component_extracted": "Component",
+              "level": "Level",
+              "loggerName": "Logger",
+              "message": "Message",
+              "shortLogger": "Logger"
+            }
+          }
+        }
+      ],
+      "type": "table"
+    }
+  ],
+  "schemaVersion": 41,
+  "tags": [
+    "identity-observability",
+    "logging",
+    "iddm",
+    "zookeeper"
+  ],
+  "templating": {
+    "list": [
+      {
+        "hide": 2,
+        "name": "DS_LOKI",
+        "options": [],
+        "query": "loki",
+        "refresh": 1,
+        "regex": "",
+        "type": "datasource"
+      },
+      {
+        "allowCustomValue": false,
+        "current": {},
+        "datasource": {
+          "type": "loki",
+          "uid": "${DS_LOKI}"
+        },
+        "definition": "",
+        "description": "",
+        "label": "Environment",
+        "name": "environment",
+        "options": [],
+        "query": {
+          "label": "environment",
+          "refId": "LokiVariableQueryEditor-VariableQuery",
+          "stream": "",
+          "type": 1
+        },
+        "refresh": 1,
+        "regex": "",
+        "sort": 1,
+        "type": "query"
+      },
+      {
+        "hide": 2,
+        "label": "Application",
+        "name": "application",
+        "query": "identity-observability",
+        "skipUrlSync": true,
+        "type": "constant",
+        "current": {
+          "value": "identity-observability",
+          "text": "identity-observability",
+          "selected": false
+        },
+        "options": [
+          {
+            "value": "identity-observability",
+            "text": "identity-observability",
+            "selected": false
+          }
+        ]
+      }
+    ]
+  },
+  "time": {
+    "from": "now-30m",
+    "to": "now"
+  },
+  "timepicker": {
+    "refresh_intervals": [
+      "30s",
+      "1m",
+      "5m",
+      "30m",
+      "1h"
+    ]
+  },
+  "timezone": "Europe/Paris",
+  "title": "Logs - ID Sync Config Zookeeper",
+  "uid": "ido-logs-iddm-zookeeper",
+  "version": 4,
+  "weekStart": ""
+}

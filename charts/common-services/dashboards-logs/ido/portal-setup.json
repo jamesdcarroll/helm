@@ -1,0 +1,325 @@
+{
+  "annotations": {
+    "list": [
+      {
+        "builtIn": 1,
+        "datasource": {
+          "type": "grafana",
+          "uid": "-- Grafana --"
+        },
+        "enable": true,
+        "hide": true,
+        "iconColor": "rgba(0, 211, 255, 1)",
+        "name": "Annotations & Alerts",
+        "type": "dashboard"
+      }
+    ]
+  },
+  "description": "Portal setup logs",
+  "editable": true,
+  "fiscalYearStartMonth": 0,
+  "graphTooltip": 0,
+  "id": 212,
+  "links": [],
+  "liveNow": true,
+  "panels": [
+    {
+      "datasource": {
+        "type": "loki",
+        "uid": "${DS_LOKI}"
+      },
+      "fieldConfig": {
+        "defaults": {
+          "color": {
+            "mode": "thresholds"
+          },
+          "custom": {
+            "align": "auto",
+            "cellOptions": {
+              "type": "auto"
+            },
+            "filterable": true,
+            "inspect": false
+          },
+          "mappings": [
+            {
+              "options": {
+                "ERROR": {
+                  "color": "red",
+                  "index": 0
+                },
+                "INFO": {
+                  "color": "transparent",
+                  "index": 2
+                },
+                "WARNING": {
+                  "color": "yellow",
+                  "index": 1
+                }
+              },
+              "type": "value"
+            }
+          ],
+          "noValue": "No data - check time range",
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              {
+                "color": "green",
+                "value": 0
+              },
+              {
+                "color": "red",
+                "value": 80
+              }
+            ]
+          }
+        },
+        "overrides": [
+          {
+            "matcher": {
+              "id": "byName",
+              "options": "Time"
+            },
+            "properties": [
+              {
+                "id": "custom.width",
+                "value": 199
+              }
+            ]
+          },
+          {
+            "matcher": {
+              "id": "byName",
+              "options": "Level"
+            },
+            "properties": [
+              {
+                "id": "custom.width",
+                "value": 89
+              },
+              {
+                "id": "custom.cellOptions",
+                "value": {
+                  "applyToRow": true,
+                  "type": "color-background"
+                }
+              }
+            ]
+          },
+          {
+            "matcher": {
+              "id": "byName",
+              "options": "container"
+            },
+            "properties": [
+              {
+                "id": "custom.width",
+                "value": 127
+              }
+            ]
+          }
+        ]
+      },
+      "gridPos": {
+        "h": 25,
+        "w": 24,
+        "x": 0,
+        "y": 0
+      },
+      "id": 2,
+      "options": {
+        "cellHeight": "sm",
+        "footer": {
+          "countRows": false,
+          "enablePagination": true,
+          "fields": "",
+          "reducer": [
+            "sum"
+          ],
+          "show": false
+        },
+        "showHeader": true,
+        "sortBy": []
+      },
+      "pluginVersion": "12.1.0",
+      "targets": [
+        {
+          "datasource": {
+            "type": "loki",
+            "uid": "${DS_LOKI}"
+          },
+          "direction": "backward",
+          "editorMode": "code",
+          "expr": "{app=\"$application\", environment=\"$environment\", component=\"portal\", container=\"portal-setup\"} | json | __error__ != \"JSONParserErr\"",
+          "queryType": "range",
+          "refId": "A"
+        }
+      ],
+      "transformations": [
+        {
+          "id": "extractFields",
+          "options": {
+            "delimiter": ",",
+            "source": "labels"
+          }
+        },
+        {
+          "id": "organize",
+          "options": {
+            "excludeByName": {
+              "Line": true,
+              "app": true,
+              "component": true,
+              "container": true,
+              "detected_level": true,
+              "endOfBatch": true,
+              "environment": true,
+              "exc_info": true,
+              "file": true,
+              "id": true,
+              "instance": true,
+              "job": true,
+              "labelTypes": true,
+              "labels": true,
+              "level": false,
+              "loggerFqcn": true,
+              "loggerName": false,
+              "namespace": true,
+              "node_name": true,
+              "pod": true,
+              "portalInstance": true,
+              "retry_interval": true,
+              "service_name": true,
+              "service_name_extracted": true,
+              "template": true,
+              "tenant": true,
+              "thread": true,
+              "threadId": true,
+              "threadPriority": true,
+              "timeMillis": true,
+              "timeout": true,
+              "timestamp": true,
+              "tsNs": true,
+              "version": true
+            },
+            "includeByName": {},
+            "indexByName": {
+              "Line": 2,
+              "Time": 1,
+              "app": 6,
+              "component": 7,
+              "container": 8,
+              "detected_level": 10,
+              "endOfBatch": 11,
+              "environment": 12,
+              "id": 5,
+              "instance": 13,
+              "job": 14,
+              "labelTypes": 4,
+              "labels": 0,
+              "level": 15,
+              "loggerFqcn": 16,
+              "loggerName": 17,
+              "message": 18,
+              "namespace": 19,
+              "node_name": 20,
+              "pod": 21,
+              "portalInstance": 22,
+              "service_name": 23,
+              "shortLogger": 9,
+              "tenant": 24,
+              "thread": 25,
+              "threadId": 26,
+              "threadPriority": 27,
+              "timeMillis": 28,
+              "tsNs": 3,
+              "version": 29
+            },
+            "renameByName": {
+              "level": "Level",
+              "message": "Message",
+              "shortLogger": "Logger"
+            }
+          }
+        }
+      ],
+      "type": "table"
+    }
+  ],
+  "preload": false,
+  "schemaVersion": 41,
+  "tags": [
+    "identity-observability",
+    "logging",
+    "ido-dashboard"
+  ],
+  "templating": {
+    "list": [
+      {
+        "hide": 2,
+        "name": "DS_LOKI",
+        "options": [],
+        "query": "loki",
+        "refresh": 1,
+        "regex": "",
+        "type": "datasource"
+      },
+      {
+        "allowCustomValue": false,
+        "current": {
+          "text": "rli-ops10-100",
+          "value": "rli-ops10-100"
+        },
+        "datasource": {
+          "type": "loki",
+          "uid": "${DS_LOKI}"
+        },
+        "definition": "",
+        "description": "",
+        "label": "Environment",
+        "name": "environment",
+        "options": [],
+        "query": {
+          "label": "environment",
+          "refId": "LokiVariableQueryEditor-VariableQuery",
+          "stream": "",
+          "type": 1
+        },
+        "refresh": 1,
+        "regex": "",
+        "sort": 1,
+        "type": "query"
+      },
+      {
+        "current": {
+          "text": "identity-observability",
+          "value": "identity-observability"
+        },
+        "hide": 2,
+        "label": "Application",
+        "name": "application",
+        "query": "identity-observability",
+        "skipUrlSync": true,
+        "type": "constant"
+      }
+    ]
+  },
+  "time": {
+    "from": "now-6h",
+    "to": "now"
+  },
+  "timepicker": {
+    "refresh_intervals": [
+      "30s",
+      "1m",
+      "5m",
+      "30m",
+      "1h"
+    ]
+  },
+  "timezone": "browser",
+  "title": "Logs - Portal Setup",
+  "uid": "ido-logs-portal-setup",
+  "version": 3
+}

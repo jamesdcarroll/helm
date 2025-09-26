@@ -10,6 +10,9 @@
 
 # Note: Adjust individual component settings to match your specific environment and requirements.
 
+global:
+  hibernate: false
+
 nodeSelector: {}
 
 # Ingress Configuration for Load Balancing
@@ -40,6 +43,14 @@ ingress:
 
 zookeeper:
   enabled: false
+  volumePermissions:
+    enabled: false
+    # image:
+    #  repository: radiantone/bitnami-shell
+    #  tag: 11-debian-11-r51
+  image:
+    repository: radiantone/zookeeper
+    tag: 3.8.0-debian-11-r56
   fullnameOverride: zookeeper
   nodeSelector: {}
 
@@ -65,6 +76,10 @@ argo-cd:
     params:
       server.rootpath: "/argocd"
       server.insecure: true
+    rbac:
+      policy.default: 'role:readonly'
+      policy.csv: |
+        g, devops, role:admin
   dex:
     enabled: false
   applicationSet:
@@ -83,6 +98,12 @@ argo-cd:
     nodeSelector: {}
   crds:
     keep: false
+  # Disabling new components that didn't exist in 5.6.0
+  commitServer:
+    enabled: false
+  # New required settings for 7.8.0
+  redisSecretInit:
+    enabled: true  #  This is needed for Redis to work properly in 7.8.0
 
 # Prometheus Monitoring Stack Configuration
 # ----------------------------------------
@@ -106,17 +127,22 @@ prometheus:
   configmapReload:
     prometheus:
       enabled: false
-  nodeExporter:
+  # nodeExporter:
+  #   enabled: false
+  # kubeStateMetrics:
+  #   enabled: false
+  kube-state-metrics:
     enabled: false
-  kubeStateMetrics:
-    enabled: false
+  prometheus-node-exporter:
+    enabled: true
   alertmanager:
     enabled: false
-  pushgateway:
+  # pushgateway:
+  prometheus-pushgateway:
     fullnameOverride: prometheus-pushgateway
     nodeSelector: {}
     extraArgs:
-      web.enable-admin-api: true
+      - "--web.enable-admin-api"
   server:
     extraFlags:
       - web.enable-lifecycle
@@ -131,6 +157,8 @@ prometheus:
       size: 8Gi
     statefulSet:
       enabled: true
+    service:
+      type: ClusterIP
 
 # Grafana Configuration
 # ---------------------
@@ -150,6 +178,8 @@ grafana:
   fullnameOverride: grafana
   enabled: true
   nodeSelector: {}
+  service:
+    type: ClusterIP
   # Persistence enabled by default
   persistence:
     enabled: true
@@ -213,6 +243,14 @@ grafana:
             timeField: "@timestamp"
             interval: Daily
           readonly: true
+        - name: Loki
+          type: loki
+          url: http://loki-gateway
+          access: proxy
+          isDefault: false
+          # jsonData:
+          #   timeout: 60
+          #   maxLines: 1000
 
   dashboardProviders:
     dashboardproviders.yaml:
@@ -268,6 +306,7 @@ grafana:
         editable: true
         options:
           path: /var/lib/grafana/dashboards/service-status
+      # -- IDA Metrics Dashboards
       - name: 'ia-service-status'
         orgId: 1
         folder: ''
@@ -358,12 +397,427 @@ grafana:
         editable: true
         options:
           path: /var/lib/grafana/dashboards/ia-governance-portal
+      # -- IDO Logs Dashboards
+      - name: 'ido-logs-alert-center'
+        orgId: 1
+        folder: ''
+        type: file
+        disableDeletion: false
+        updateIntervalSeconds: 10
+        allowUiUpdates: true
+        editable: true
+        options:
+          path: /var/lib/grafana/dashboards/ido-logs-alert-center
+      - name: 'ido-logs-analytics-db'
+        orgId: 1
+        folder: ''
+        type: file
+        disableDeletion: false
+        updateIntervalSeconds: 10
+        allowUiUpdates: true
+        editable: true
+        options:
+          path: /var/lib/grafana/dashboards/ido-logs-analytics-db
+      - name: 'ido-logs-api-umbrella'
+        orgId: 1
+        folder: ''
+        type: file
+        disableDeletion: false
+        updateIntervalSeconds: 10
+        allowUiUpdates: true
+        editable: true
+        options:
+          path: /var/lib/grafana/dashboards/ido-logs-api-umbrella
+      - name: 'ido-logs-environment-setup'
+        orgId: 1
+        folder: ''
+        type: file
+        disableDeletion: false
+        updateIntervalSeconds: 10
+        allowUiUpdates: true
+        editable: true
+        options:
+          path: /var/lib/grafana/dashboards/ido-logs-environment-setup
+      - name: 'ido-logs-global-scheduler'
+        orgId: 1
+        folder: ''
+        type: file
+        disableDeletion: false
+        updateIntervalSeconds: 10
+        allowUiUpdates: true
+        editable: true
+        options:
+          path: /var/lib/grafana/dashboards/ido-logs-global-scheduler
+      - name: 'ido-logs-iddm-api-gateway'
+        orgId: 1
+        folder: ''
+        type: file
+        disableDeletion: false
+        updateIntervalSeconds: 10
+        allowUiUpdates: true
+        editable: true
+        options:
+          path: /var/lib/grafana/dashboards/ido-logs-iddm-api-gateway
+      - name: 'ido-logs-iddm-authentication-service'
+        orgId: 1
+        folder: ''
+        type: file
+        disableDeletion: false
+        updateIntervalSeconds: 10
+        allowUiUpdates: true
+        editable: true
+        options:
+          path: /var/lib/grafana/dashboards/ido-logs-iddm-authentication-service
+      - name: 'ido-logs-iddm-core'
+        orgId: 1
+        folder: ''
+        type: file
+        disableDeletion: false
+        updateIntervalSeconds: 10
+        allowUiUpdates: true
+        editable: true
+        options:
+          path: /var/lib/grafana/dashboards/ido-logs-iddm-core
+      - name: 'ido-logs-iddm-data-catalog'
+        orgId: 1
+        folder: ''
+        type: file
+        disableDeletion: false
+        updateIntervalSeconds: 10
+        allowUiUpdates: true
+        editable: true
+        options:
+          path: /var/lib/grafana/dashboards/ido-logs-iddm-data-catalog
+      - name: 'ido-logs-iddm-directory-browser'
+        orgId: 1
+        folder: ''
+        type: file
+        disableDeletion: false
+        updateIntervalSeconds: 10
+        allowUiUpdates: true
+        editable: true
+        options:
+          path: /var/lib/grafana/dashboards/ido-logs-iddm-directory-browser
+      - name: 'ido-logs-iddm-directory-namespace'
+        orgId: 1
+        folder: ''
+        type: file
+        disableDeletion: false
+        updateIntervalSeconds: 10
+        allowUiUpdates: true
+        editable: true
+        options:
+          path: /var/lib/grafana/dashboards/ido-logs-iddm-directory-namespace
+      - name: 'ido-logs-iddm-directory-schema'
+        orgId: 1
+        folder: ''
+        type: file
+        disableDeletion: false
+        updateIntervalSeconds: 10
+        allowUiUpdates: true
+        editable: true
+        options:
+          path: /var/lib/grafana/dashboards/ido-logs-iddm-directory-schema
+      - name: 'ido-logs-iddm-proxy'
+        orgId: 1
+        folder: ''
+        type: file
+        disableDeletion: false
+        updateIntervalSeconds: 10
+        allowUiUpdates: true
+        editable: true
+        options:
+          path: /var/lib/grafana/dashboards/ido-logs-iddm-proxy
+      - name: 'ido-logs-iddm-settings'
+        orgId: 1
+        folder: ''
+        type: file
+        disableDeletion: false
+        updateIntervalSeconds: 10
+        allowUiUpdates: true
+        editable: true
+        options:
+          path: /var/lib/grafana/dashboards/ido-logs-iddm-settings
+      - name: 'ido-logs-iddm-system-administration'
+        orgId: 1
+        folder: ''
+        type: file
+        disableDeletion: false
+        updateIntervalSeconds: 10
+        allowUiUpdates: true
+        editable: true
+        options:
+          path: /var/lib/grafana/dashboards/ido-logs-iddm-system-administration
+      - name: 'ido-logs-iddm-ui'
+        orgId: 1
+        folder: ''
+        type: file
+        disableDeletion: false
+        updateIntervalSeconds: 10
+        allowUiUpdates: true
+        editable: true
+        options:
+          path: /var/lib/grafana/dashboards/ido-logs-iddm-ui
+      - name: 'ido-logs-iddm-zookeeper'
+        orgId: 1
+        folder: ''
+        type: file
+        disableDeletion: false
+        updateIntervalSeconds: 10
+        allowUiUpdates: true
+        editable: true
+        options:
+          path: /var/lib/grafana/dashboards/ido-logs-iddm-zookeeper
+      - name: 'ido-logs-portal'
+        orgId: 1
+        folder: ''
+        type: file
+        disableDeletion: false
+        updateIntervalSeconds: 10
+        allowUiUpdates: true
+        editable: true
+        options:
+          path: /var/lib/grafana/dashboards/ido-logs-portal
+      - name: 'ido-logs-portal-setup'
+        orgId: 1
+        folder: ''
+        type: file
+        disableDeletion: false
+        updateIntervalSeconds: 10
+        allowUiUpdates: true
+        editable: true
+        options:
+          path: /var/lib/grafana/dashboards/ido-logs-portal-setup
+      - name: 'ido-logs-ledger-operations'
+        orgId: 1
+        folder: ''
+        type: file
+        disableDeletion: false
+        updateIntervalSeconds: 10
+        allowUiUpdates: true
+        editable: true
+        options:
+          path: /var/lib/grafana/dashboards/ido-logs-ledger-operations
+      - name: 'ido-logs-nats'
+        orgId: 1
+        folder: ''
+        type: file
+        disableDeletion: false
+        updateIntervalSeconds: 10
+        allowUiUpdates: true
+        editable: true
+        options:
+          path: /var/lib/grafana/dashboards/ido-logs-nats
+      - name: 'ido-logs-nebula-graphd'
+        orgId: 1
+        folder: ''
+        type: file
+        disableDeletion: false
+        updateIntervalSeconds: 10
+        allowUiUpdates: true
+        editable: true
+        options:
+          path: /var/lib/grafana/dashboards/ido-logs-nebula-graphd
+      - name: 'ido-logs-nebula-metad'
+        orgId: 1
+        folder: ''
+        type: file
+        disableDeletion: false
+        updateIntervalSeconds: 10
+        allowUiUpdates: true
+        editable: true
+        options:
+          path: /var/lib/grafana/dashboards/ido-logs-nebula-metad
+      - name: 'ido-logs-nebula-storaged'
+        orgId: 1
+        folder: ''
+        type: file
+        disableDeletion: false
+        updateIntervalSeconds: 10
+        allowUiUpdates: true
+        editable: true
+        options:
+          path: /var/lib/grafana/dashboards/ido-logs-nebula-storaged
+      - name: 'ido-logs-observation-supervisor'
+        orgId: 1
+        folder: ''
+        type: file
+        disableDeletion: false
+        updateIntervalSeconds: 10
+        allowUiUpdates: true
+        editable: true
+        options:
+          path: /var/lib/grafana/dashboards/ido-logs-observation-supervisor
+      - name: 'ido-logs-pipeline-job-manager'
+        orgId: 1
+        folder: ''
+        type: file
+        disableDeletion: false
+        updateIntervalSeconds: 10
+        allowUiUpdates: true
+        editable: true
+        options:
+          path: /var/lib/grafana/dashboards/ido-logs-pipeline-job-manager
+      - name: 'ido-logs-pipeline-orchestrator'
+        orgId: 1
+        folder: ''
+        type: file
+        disableDeletion: false
+        updateIntervalSeconds: 10
+        allowUiUpdates: true
+        editable: true
+        options:
+          path: /var/lib/grafana/dashboards/ido-logs-pipeline-orchestrator
+      - name: 'ido-logs-pipeline-task-manager'
+        orgId: 1
+        folder: ''
+        type: file
+        disableDeletion: false
+        updateIntervalSeconds: 10
+        allowUiUpdates: true
+        editable: true
+        options:
+          path: /var/lib/grafana/dashboards/ido-logs-pipeline-task-manager
+      - name: 'ido-logs-schema-manager'
+        orgId: 1
+        folder: ''
+        type: file
+        disableDeletion: false
+        updateIntervalSeconds: 10
+        allowUiUpdates: true
+        editable: true
+        options:
+          path: /var/lib/grafana/dashboards/ido-logs-schema-manager
+      - name: 'ido-logs-secret-manager'
+        orgId: 1
+        folder: ''
+        type: file
+        disableDeletion: false
+        updateIntervalSeconds: 10
+        allowUiUpdates: true
+        editable: true
+        options:
+          path: /var/lib/grafana/dashboards/ido-logs-secret-manager
+      - name: 'ido-logs-writeback'
+        orgId: 1
+        folder: ''
+        type: file
+        disableDeletion: false
+        updateIntervalSeconds: 10
+        allowUiUpdates: true
+        editable: true
+        options:
+          path: /var/lib/grafana/dashboards/ido-logs-writeback
+      # -- IDO Metrics Dashboards
+      - name: 'ido-metrics-alert-center'
+        orgId: 1
+        folder: ''
+        type: file
+        disableDeletion: false
+        updateIntervalSeconds: 10
+        allowUiUpdates: true
+        editable: true
+        options:
+          path: /var/lib/grafana/dashboards/ido-metrics-alert-center
+      - name: 'ido-metrics-graph-database'
+        orgId: 1
+        folder: ''
+        type: file
+        disableDeletion: false
+        updateIntervalSeconds: 10
+        allowUiUpdates: true
+        editable: true
+        options:
+          path: /var/lib/grafana/dashboards/ido-metrics-graph-database
+      - name: 'ido-metrics-iddm-core'
+        orgId: 1
+        folder: ''
+        type: file
+        disableDeletion: false
+        updateIntervalSeconds: 10
+        allowUiUpdates: true
+        editable: true
+        options:
+          path: /var/lib/grafana/dashboards/ido-metrics-iddm-core
+      - name: 'ido-metrics-ido-dashboard'
+        orgId: 1
+        folder: ''
+        type: file
+        disableDeletion: false
+        updateIntervalSeconds: 10
+        allowUiUpdates: true
+        editable: true
+        options:
+          path: /var/lib/grafana/dashboards/ido-metrics-ido-dashboard
+      - name: 'ido-metrics-observations-channels-contention'
+        orgId: 1
+        folder: ''
+        type: file
+        disableDeletion: false
+        updateIntervalSeconds: 10
+        allowUiUpdates: true
+        editable: true
+        options:
+          path: /var/lib/grafana/dashboards/ido-metrics-observations-channels-contention
+      - name: 'ido-metrics-observations-functional'
+        orgId: 1
+        folder: ''
+        type: file
+        disableDeletion: false
+        updateIntervalSeconds: 10
+        allowUiUpdates: true
+        editable: true
+        options:
+          path: /var/lib/grafana/dashboards/ido-metrics-observations-functional
+      - name: 'ido-metrics-observations-process'
+        orgId: 1
+        folder: ''
+        type: file
+        disableDeletion: false
+        updateIntervalSeconds: 10
+        allowUiUpdates: true
+        editable: true
+        options:
+          path: /var/lib/grafana/dashboards/ido-metrics-observations-process
+      - name: 'ido-metrics-observations-timings'
+        orgId: 1
+        folder: ''
+        type: file
+        disableDeletion: false
+        updateIntervalSeconds: 10
+        allowUiUpdates: true
+        editable: true
+        options:
+          path: /var/lib/grafana/dashboards/ido-metrics-observations-timings
+      - name: 'ido-metrics-system'
+        orgId: 1
+        folder: ''
+        type: file
+        disableDeletion: false
+        updateIntervalSeconds: 10
+        allowUiUpdates: true
+        editable: true
+        options:
+          path: /var/lib/grafana/dashboards/ido-metrics-system
+      - name: 'ido-metrics-writeback-service'
+        orgId: 1
+        folder: ''
+        type: file
+        disableDeletion: false
+        updateIntervalSeconds: 10
+        allowUiUpdates: true
+        editable: true
+        options:
+          path: /var/lib/grafana/dashboards/ido-metrics-writeback-service
+
   dashboardsConfigMaps:
+    # -- FID Dashboards
     fid: "fid-dashboard"
     zookeeper: "zookeeper-dashboard"
     iddm: "iddm-dashboard"
     elasticsearch: "audit-logs-elastic-dashboard"
     service-status: "service-status-dashboard"
+    # -- IDA Metrics Dashboards
     ia-service-status: "ia-service-status-dashboard"
     ida: "ia-dashboard"
     ia-controller-beam: "ia-controller-beam-dashboard"
@@ -373,6 +827,49 @@ grafana:
     ia-data-ingestion: "ia-data-ingestion-dashboard"
     ia-extractor-webapp: "ia-extractor-webapp-dashboard"
     ia-governance-portal: "ia-governance-portal-dashboard"
+    # -- IDO Logs Dashboards
+    ido-logs-alert-center: "ido-logs-alert-center-dashboard"
+    ido-logs-analytics-db: "ido-logs-analytics-db-dashboard"
+    ido-logs-api-umbrella: "ido-logs-api-umbrella-dashboard"
+    ido-logs-environment-setup: "ido-logs-environment-setup-dashboard"
+    ido-logs-global-scheduler: "ido-logs-global-scheduler-dashboard"
+    ido-logs-iddm-api-gateway: "ido-logs-iddm-api-gateway-dashboard"
+    ido-logs-iddm-authentication-service: "ido-logs-iddm-authentication-service-dashboard"
+    ido-logs-iddm-core: "ido-logs-iddm-core-dashboard"
+    ido-logs-iddm-data-catalog: "ido-logs-iddm-data-catalog-dashboard"
+    ido-logs-iddm-directory-browser: "ido-logs-iddm-directory-browser-dashboard"
+    ido-logs-iddm-directory-namespace: "ido-logs-iddm-directory-namespace-dashboard"
+    ido-logs-iddm-directory-schema: "ido-logs-iddm-directory-schema-dashboard"
+    ido-logs-iddm-proxy: "ido-logs-iddm-proxy-dashboard"
+    ido-logs-iddm-settings: "ido-logs-iddm-settings-dashboard"
+    ido-logs-iddm-system-administration: "ido-logs-iddm-system-administration-dashboard"
+    ido-logs-iddm-ui: "ido-logs-iddm-ui-dashboard"
+    ido-logs-iddm-zookeeper: "ido-logs-iddm-zookeeper-dashboard"
+    ido-logs-portal: "ido-logs-portal-dashboard"
+    ido-logs-portal-setup: "ido-logs-portal-setup-dashboard"
+    ido-logs-ledger-operations: "ido-logs-ledger-operations-dashboard"
+    ido-logs-nats: "ido-logs-nats-dashboard"
+    ido-logs-nebula-graphd: "ido-logs-nebula-graphd-dashboard"
+    ido-logs-nebula-metad: "ido-logs-nebula-metad-dashboard"
+    ido-logs-nebula-storaged: "ido-logs-nebula-storaged-dashboard"
+    ido-logs-observation-supervisor: "ido-logs-observation-supervisor-dashboard"
+    ido-logs-pipeline-job-manager: "ido-logs-pipeline-job-manager-dashboard"
+    ido-logs-pipeline-orchestrator: "ido-logs-pipeline-orchestrator-dashboard"
+    ido-logs-pipeline-task-manager: "ido-logs-pipeline-task-manager-dashboard"
+    ido-logs-schema-manager: "ido-logs-schema-manager-dashboard"
+    ido-logs-secret-manager: "ido-logs-secret-manager-dashboard"
+    ido-logs-writeback: "ido-logs-writeback-dashboard"
+    # -- IDO Metrics Dashboards
+    ido-metrics-alert-center: "ido-metrics-alert-center-dashboard"
+    ido-metrics-graph-database: "ido-metrics-graph-database-dashboard"
+    ido-metrics-iddm-core: "ido-metrics-iddm-core-dashboard"
+    ido-metrics-ido-dashboard: "ido-metrics-ido-dashboard-dashboard"
+    ido-metrics-observations-channels-contention: "ido-metrics-observations-channels-contention-dashboard"
+    ido-metrics-observations-functional: "ido-metrics-observations-functional-dashboard"
+    ido-metrics-observations-process: "ido-metrics-observations-process-dashboard"
+    ido-metrics-observations-timings: "ido-metrics-observations-timings-dashboard"
+    ido-metrics-system: "ido-metrics-system-dashboard"
+    ido-metrics-writeback-service: "ido-metrics-writeback-service-dashboard"
 
 # Elasticsearch & Kibana Configuration
 # -----------------------------------
@@ -393,6 +890,8 @@ elasticsearch:
   enabled: true
   replicas: 1
   nodeSelector: {}
+  service:
+    type: ClusterIP
   # Persistence enabled by default and size to 100Gi
   volumeClaimTemplate:
     resources:
@@ -414,6 +913,8 @@ kibana:
   enabled: true
   fullnameOverride: kibana
   nodeSelector: {}
+  service:
+    type: ClusterIP
   # extraEnvs:
   #   - name: ELASTICSEARCH_USERNAME
   #     value: elastic
@@ -548,6 +1049,9 @@ haproxy:
       {{- if ((.Values.route).opensearch | default false) }}
       use_backend opensearch_backend if { path /opensearch } or { path_beg /opensearch/ }
       {{- end }}
+      {{- if ((.Values.route).velero | default false) }}
+      use_backend velero_backend if { path /velero } or { path_beg /velero/ }
+      {{- end }}
 
     # backends
     {{- if ((.Values.route).argocd | default false) }}
@@ -614,6 +1118,11 @@ haproxy:
       http-request set-path %[path,regsub(^/opensearch/?,/)]
       server opensearch opensearch-cluster-master:9200 check
     {{- end }}
+    {{- if ((.Values.route).velero | default false) }}
+    backend velero_backend
+      http-request set-path %[path,regsub(^/velero/?,/)]
+      server velero velero-ui:3000 check
+    {{- end }}
     {{- if ((.Values.route).eocui | default false) }}
     # Default backend
     backend def_backend
@@ -640,9 +1149,24 @@ haproxy:
 
 postgresql:
   enabled: true
+  volumePermissions:
+    enabled: false
+    # image:
+    #  repository: radiantone/bitnami-shell
+    #  tag: 11-debian-11-r57
+  metrics:
+    enabled: false
+    # image:
+    #  repository: radiantone/postgres-exporter
+    #  tag: 0.11.1-debian-11-r34
   fullnameOverride: postgresql
+  image:
+    repository: radiantone/postgresql
+    tag: 15.1.0-debian-11-r7
   primary:
     nodeSelector: {}
+    service:
+      type: ClusterIP
     # Persistence enabled by default and size to 50Gi
     persistence:
       size: 10Gi
@@ -682,6 +1206,8 @@ pgadmin4:
   enabled: true
   fullnameOverride: pgadmin4
   nodeSelector: {}
+  service:
+    type: ClusterIP
   persistentVolume:
     enabled: false
   env:
@@ -1022,6 +1548,11 @@ fluent-bit:
 # Curator can perform actions like deleting, closing, or creating indices based on configured filters.
 
 curator:
+  image:
+    repository: radiantone/elasticsearch-curator-archived
+    pullPolicy: Always
+    tag: 5.8.4-debian-10-r253
+  imagePullSecrets: []
   enabled: true
   dryrun: false
   # Elasticsearch Client Settings
@@ -1166,7 +1697,11 @@ velero:
   credentials:
     useSecret: false
   cleanUpCRDs: true
+  upgradeCRDs: false
   nodeSelector: {}
+  kubectl:
+    image:
+      repository: docker.io/radiantone/kubectl
   configuration:
     # defaultBackupStorageLocation: common-bsl
     # defaultVolumeSnapshotLocations: common-vsl
@@ -1175,12 +1710,13 @@ velero:
     # the frequency of the reconciliation loop that garbage the expired backups
     garbageCollectionFrequency: 1h
     # avoid default Backup Storage Location to be created by Velero chart
-    backupStorageLocation: nil
+    backupStorageLocation: []
     # avoid default Volume Storage Location to be created by Velero chart
-    volumeSnapshotLocation: nil
+    volumeSnapshotLocation: []
   initContainers:
     - name: velero-plugin-for-aws
-      image: "velero/velero-plugin-for-aws:v1.11.1"
+      # image: "velero/velero-plugin-for-aws:v1.11.1"
+      image: "velero/velero-plugin-for-aws:v1.12.2"
       imagePullPolicy: IfNotPresent
       volumeMounts:
         - mountPath: /target
@@ -1245,11 +1781,60 @@ cloudnative-pg:
     create: true
     name: cnpg-controller-manager-config
     data:
-      INHERITED_LABELS: app.kubernetes.io/*, radiantlogic.io/*
-      INHERITED_ANNOTATIONS: meta.helm.sh/*, helm.sh/*
+      INHERITED_LABELS: app.kubernetes.io/*, radiantlogic.io/*, *.radiantlogic.io/*
+      INHERITED_ANNOTATIONS: meta.helm.sh/*, helm.sh/*, radiantlogic.io/*, *.radiantlogic.io/*
   nodeSelector: {}
   tolerations: []
   affinity: {}
+  # CRDs are installed by a dedicated job
+  crds:
+    create: false
+
+# -----------------------------------------------------------------
+# -- Identity Observability - Nebula Operator for Graph Database
+# -----------------------------------------------------------------
+nebula-operator:
+  enabled: false
+  nameOverride: nebula
+  imagePullSecrets: []
+
+  controllerManager:
+    replicas: 1
+
+  scheduler:
+    replicas: 1
+
+  admissionWebhook:
+    contollerManagerAdmissionWebhook:
+      create: false
+    autoscalerAdmissionWebhook:
+      create: false
+
+  # -- don't use Nebula provided job to avoid any issue with ArgoCD
+  upgradeCRD: false
+
+  nodeSelector: {}
+  tolerations: []
+  affinity: {}
+
+# -----------------------------------------------------------------
+# -- Identity Observability - Flink Operator for Apache Flink data processor
+# -----------------------------------------------------------------
+flink-kubernetes-operator:
+  enabled: false
+  fullnameOverride: flink-operator
+  nameOverride: flink-operator
+  imagePullSecrets: []
+  operatorPod:
+    nodeSelector: {}
+
+  webhook:
+    create: false
+
+  jobServiceAccount:
+    create: true
+    annotations: {}
+    name: "flink"
 
 # -----------------------------------------------------------------
 # -- Backup Manager service for Velero
@@ -1259,7 +1844,7 @@ backupManager:
   replicas: 1
   image:
     repository: radiantone/eoc-backup-manager
-    tag: 1.15.0-rc.1
+    tag: "1.16.0"
     pullPolicy: Always
   imagePullSecrets: []
   service:
@@ -1285,6 +1870,7 @@ backupManager:
     enabled: false
     host: localhost
     port: 8080
+  podsWaitTimeout: "5m"
   webhook:
     enabled: false
     syncPeriod: "1m"
@@ -1296,3 +1882,436 @@ backupManager:
       # Ex. http://eoc-backend-service/webhook/restores
       url: ""
       timeout: "1h"
+
+# -----------------------------------------------------------------
+# -- Velero UI -- from https://github.com/otwld/velero-ui
+# -----------------------------------------------------------------
+velero-ui:
+  enabled: false
+  env:
+    - name: BASIC_AUTH_PASSWORD
+      value: "eLm0p#u6Fk"
+  fullnameOverride: "velero-ui"
+  nodeSelector: {}
+  service:
+    type: NodePort
+  configuration:
+    general: {}
+      # veleroNamespace: velero
+
+# -----------------------------------------------------------------
+# Loki -- https://grafana.com/docs/loki/latest/setup/install
+# https://github.com/grafana/loki/blob/main/production/helm/loki/
+# -----------------------------------------------------------------
+loki:
+  enabled: false
+  fullnameOverride: loki
+
+  deploymentMode: SimpleScalable
+  imagePullSecrets: []
+
+  test:
+    enabled: false
+  lokiCanary:
+    enabled: false
+  ruler:
+    enabled: false
+
+  loki:
+    # multi-tenancy disabled by default
+    auth_enabled: false
+    schemaConfig:
+      configs:
+        - from: "2024-04-01"
+          store: tsdb
+          object_store: s3
+          schema: v13
+          index:
+            prefix: loki_index_
+            period: 24h
+
+    storage_config:
+      aws: {}
+        # region: eu-west-3
+        # bucketnames: duploservices-rli-ops10-svc-common-125328463501
+        # s3forcepathstyle: true
+
+    ingester:
+      chunk_encoding: snappy
+      wal:
+        enabled: true
+        flush_on_shutdown: true
+
+    querier:
+      # Default is 4, if you have enough memory and CPU you can increase, reduce if OOMing
+      max_concurrent: 4
+
+    pattern_ingester:
+      enabled: true
+
+    # Global limit for all tenants (can be overriden per tenant)
+    limits_config:
+      allow_structured_metadata: true
+      volume_enabled: true
+      # 1 day retention (minimal retention is 24h)
+      retention_period: 24h
+      # Example use of label to dynamically control retention
+      # retention_stream:
+      #   - selector: '{retention_policy="7d"}'
+      #     priority: 1
+      #     # 7 days
+      #     period: 168h
+      #   - selector: '{retention_policy="30d"}'
+      #     priority: 1
+      #     # 30 days
+      #     period: 720h
+      #   - selector: '{retention_policy="90d"}'
+      #     priority: 1
+      #     # 90 days
+      #     period: 2160h
+      #   - selector: '{environment_type="ephemeral"}'
+      #     priority: 1
+      #     period: 24h
+      #   - selector: '{log_level="error"}'
+      #     priority: 2
+      #     period: 2160h
+
+    compactor:
+      retention_enabled: true
+      retention_delete_delay: 1h
+      delete_request_store: s3
+
+    storage:
+      type: s3
+      bucketNames: {}
+        # chunks: duploservices-rli-ops10-svc-common-125328463501
+        # ruler: duploservices-rli-ops10-svc-common-125328463501
+        # admin: duploservices-rli-ops10-svc-common-125328463501
+      s3: {}
+        # region: eu-west-3
+        # s3forcepathstyle: true
+
+  chunksCache:
+    replicas: 1
+    nodeSelector: {}
+
+  gateway:
+    replicas: 1
+    # Disable logging of 2xx and 3xx HTTP requests
+    verboseLogging: false
+    nodeSelector: {}
+
+  backend:
+    replicas: 3
+    persistence:
+      # Usage:
+      #   - Local Temporal (TSDB) Index: index cache for faster queries
+      #   - Local Compaction Cache: temporary data during compaction
+      #   - Local Alerting Rules: if you use the ruler
+      # Dimensionnement :
+      #   - Temporal (TSDB) Index Cache: ~10% of total index volume
+      #   - Compaction Cache: space for compaction
+      #   - Formule : (daily_ingestion_gb * retention_days * 0.1) + working_space
+      #  Example:
+      #  - 30GB daily ingestion × 30 days retention × 0.1 = 90GB minimum
+      size: 100Gi
+    nodeSelector: {}
+
+  read:
+    replicas: 3
+    nodeSelector: {}
+
+  write:
+    replicas: 3
+    persistence:
+      # Usage:
+      #   - Write-Ahead Log (WAL): ensure data durability before pushing to S3
+      #   - Active Temporal (TSDB) Index: index of recent data not yet sent to S3
+      #   - Temporary Chunks: temporary data during aggregation before sending to S3
+      # Size based on:
+      #  - Ingestion Volume: ~5MB/s = 15GB WAL on average
+      #  - Safety Factor: x3 for peaks
+      #  - Formula: (ingestion_rate_mb * flush_interval_seconds * safety_factor) + overhead
+      #  Example:
+      #   - 20MB/s ingestion × 300s flush × 3 = 18GB minimum
+      #   - Recommendation: 50GB for comfort
+      size: 50Gi
+    nodeSelector: {}
+
+# -----------------------------------------------------------------
+# Alloy
+#   https://grafana.com/docs/loki/latest/send-data/alloy/
+#   https://github.com/grafana/alloy/tree/main/operations/helm/charts/alloy
+# -----------------------------------------------------------------
+alloy:
+  enabled: false
+  fullnameOverride: alloy
+
+  image:
+    pullSecrets: []
+
+  # Do not install CRDs for monitoring
+  crds:
+    create: false
+
+  loki:
+    # example: http://loki-gateway.duploservices-rli-ops10-svc.svc.cluster.local/loki/api/v1/push
+    url: ""
+
+  staticLabels: {}
+    # cluster: "rli-ops10"
+    # region: "eu-west-3"
+
+  alloy:
+    mounts:
+      varlog: true
+      dockercontainers: false
+    # 1. discovery.kubernetes → Discover pods matching criteria
+    #                        ↓
+    # 2. discovery.relabel   → Filter according to your criteria
+    #                        ↓
+    # 3. loki.source        → Read log files
+    #                        ↓
+    # 4. loki.process       → Parse, assign tenant, optimize
+    #                        ↓
+    # 5. loki.write         → Send to Loki with correct tenant
+    configMap:
+      content: |
+        logging {
+          level  = "info"
+          format = "logfmt"
+        }
+
+        livedebugging {
+          enabled = false
+        }
+
+        // ========== List tenant pods ==========
+        discovery.kubernetes "tenant_pods" {
+          role = "pod"
+          selectors {
+            role = "pod"
+            // Only application pods (with label "radiantlogic.io/environment")
+            label = "radiantlogic.io/environment"
+          }
+          // selectors {
+          //   role = "pod"
+          //   // Only application pods (with label "logging.radiantlogic.io/enabled=true")
+          //   label = "logging.radiantlogic.io/enabled=true"
+          // }
+        }
+
+        discovery.relabel "filtered_pods" {
+          targets = discovery.kubernetes.tenant_pods.targets
+
+          rule {
+            source_labels = ["__meta_kubernetes_pod_annotation_logging_radiantlogic_io_enabled"]
+            regex = "true"
+            action = "keep"
+          }
+
+          rule {
+            source_labels = ["__meta_kubernetes_pod_annotation_logging_radiantlogic_io_retention_policy"]
+            regex = "(1d|7d|30d|90d|1y)"
+            target_label = "retention_policy"
+          }
+
+          rule {
+            source_labels = ["retention_policy"]
+            regex = "^$"
+            replacement = "7d"
+            target_label = "retention_policy"
+          }
+
+          rule {
+            source_labels = ["__meta_kubernetes_pod_label_radiantlogic_io_environment"]
+            target_label = "tenant"
+          }
+
+          rule {
+            source_labels = ["__meta_kubernetes_pod_label_radiantlogic_io_environment"]
+            target_label  = "environment"
+          }
+
+          rule {
+            source_labels = ["__meta_kubernetes_pod_label_radiantlogic_io_environment_type"]
+            regex = "(ephemeral|dev|qa|non-prod|prod)"
+            target_label = "environment_type"
+          }
+
+          rule {
+            source_labels = ["environment_type"]
+            regex = "^$"
+            replacement = "non-prod"
+            target_label = "environment_type"
+          }
+
+          rule {
+            source_labels = ["__meta_kubernetes_pod_controller_name"]
+            regex         = "([0-9a-z-.]+?)(-[0-9a-f]{8,10})?"
+            target_label  = "__tmp_controller_name"
+          }
+
+          rule {
+            source_labels = ["__meta_kubernetes_pod_label_radiantlogic_io_app", "__meta_kubernetes_pod_label_app_kubernetes_io_name", "__meta_kubernetes_pod_label_app", "__tmp_controller_name", "__meta_kubernetes_pod_name"]
+            regex         = "^;*([^;]+)(;.*)?$"
+            target_label  = "app"
+          }
+
+          rule {
+            source_labels = ["__meta_kubernetes_pod_label_app_kubernetes_io_instance", "__meta_kubernetes_pod_label_instance"]
+            regex         = "^;*([^;]+)(;.*)?$"
+            target_label  = "instance"
+          }
+
+          rule {
+            source_labels = ["__meta_kubernetes_pod_label_app_kubernetes_io_version"]
+            target_label = "version"
+          }
+
+          rule {
+            source_labels = ["__meta_kubernetes_pod_label_app_kubernetes_io_component", "__meta_kubernetes_pod_label_component"]
+            regex         = "^;*([^;]+)(;.*)?$"
+            target_label  = "component"
+          }
+
+          rule {
+            source_labels = ["__meta_kubernetes_pod_node_name"]
+            target_label  = "node_name"
+          }
+
+          rule {
+            source_labels = ["__meta_kubernetes_namespace"]
+            target_label  = "namespace"
+          }
+
+          rule {
+            source_labels = ["namespace", "app"]
+            separator     = "/"
+            target_label  = "job"
+          }
+
+          rule {
+            source_labels = ["__meta_kubernetes_pod_name"]
+            target_label  = "pod"
+          }
+
+          rule {
+            source_labels = ["__meta_kubernetes_pod_container_name"]
+            target_label  = "container"
+          }
+
+          rule {
+            source_labels = ["__meta_kubernetes_pod_uid", "__meta_kubernetes_pod_container_name"]
+            separator     = "/"
+            target_label  = "__path__"
+            replacement   = "/var/log/pods/*$1/*.log"
+          }
+
+          rule {
+            source_labels = ["__meta_kubernetes_pod_annotationpresent_kubernetes_io_config_hash", "__meta_kubernetes_pod_annotation_kubernetes_io_config_hash", "__meta_kubernetes_pod_container_name"]
+            separator     = "/"
+            regex         = "true/(.*)"
+            target_label  = "__path__"
+            replacement   = "/var/log/pods/*$1/*.log"
+          }
+        }
+
+        loki.source.kubernetes "pod_logs" {
+          targets = discovery.relabel.filtered_pods.output
+          forward_to = [loki.process.tenant_logs.receiver]
+        }
+
+        loki.process "tenant_logs" {
+          // ========== CRI parsing
+          // raw format: {"log":"Hello World\n","stream":"stdout","time":"2025-08-14T10:59:00.123456789Z"}
+          stage.cri {}
+
+          // ========== Drop noisy system logs
+          stage.drop {
+            expression = "unable to retrieve container logs for containerd://"
+          }
+
+          {{- if not (empty .Values.staticLabels) }}
+          // ========== Example - Optional static Labels
+          stage.static_labels {
+            values = {
+              {{- range $key, $value := .Values.staticLabels }}
+              {{ $key }} = "{{ $value }}",
+              {{- end }}
+            }
+          }
+          {{- end }}
+
+          // ========== Cardinality optimization
+          stage.label_keep {
+            // Optimisation: remove all labels except those listed
+            // Performance: Drastically reduces Loki cardinality
+            // Rule: Keep only labels used in your queries
+            values = [
+              "tenant",
+              "retention_policy",
+              "environment",
+              "environment_type",
+              "app",
+              "file",
+              "instance",
+              "version",
+              "component",
+              "pod",
+              "container",
+              "node_name",
+              "namespace",
+              "job",
+              {{- range $key, $value := .Values.staticLabels }}
+              "{{ $key }}",
+              {{- end }}
+            ]
+          }
+
+          // ========== Strip ANSI color codes
+          stage.decolorize {}
+
+          // ========== Tenant assignment
+          stage.tenant {
+            // Use "tenant" label previously created
+            // Alloy will add Header X-Scope-OrgID with value of 'radiantlogic.io/environment' label
+            source = "tenant"
+          }
+
+          // ========== Final message
+          stage.output {
+            // Effective log text (without JSON metadata)
+            source = "message"
+          }
+
+          forward_to = [loki.write.centralized.receiver]
+        }
+
+        loki.write "centralized" {
+          endpoint {
+            url = {{ .Values.loki.url | quote}}
+
+            // Wait before sending batch
+            batch_wait = "1s"
+
+            // Max batch size (bytes)
+            batch_size = "1MiB"
+
+            // Retry configuration - if Loki is down or overloaded
+            // Initial backoff time between retries
+            min_backoff_period = "100ms"
+
+            // Maximum backoff time between retries
+            max_backoff_period = "5m"
+
+            // Max number of retries
+            max_backoff_retries = 10
+
+            // Timeout requête HTTP
+            remote_timeout = "10s"
+          }
+
+          // Limit concurrent streams
+          max_streams = 5000
+        }

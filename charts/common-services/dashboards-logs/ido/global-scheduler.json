@@ -1,0 +1,361 @@
+{
+  "annotations": {
+    "list": [
+      {
+        "builtIn": 1,
+        "datasource": {
+          "type": "grafana",
+          "uid": "-- Grafana --"
+        },
+        "enable": true,
+        "hide": true,
+        "iconColor": "rgba(0, 211, 255, 1)",
+        "name": "Annotations & Alerts",
+        "type": "dashboard"
+      }
+    ]
+  },
+  "description": "Global Scheduler logs",
+  "editable": true,
+  "fiscalYearStartMonth": 0,
+  "graphTooltip": 0,
+  "id": null,
+  "links": [],
+  "liveNow": true,
+  "panels": [
+    {
+      "datasource": {
+        "type": "loki",
+        "uid": "${DS_LOKI}"
+      },
+      "description": "Show all logs from Global Scheduler",
+      "fieldConfig": {
+        "defaults": {
+          "custom": {
+            "align": "auto",
+            "cellOptions": {
+              "type": "auto",
+              "wrapText": true
+            },
+            "filterable": true,
+            "inspect": false
+          },
+          "mappings": [
+            {
+              "type": "value",
+              "options": {
+                "fatal": {
+                  "text": "FATAL",
+                  "color": "dark-red",
+                  "index": 0
+                },
+                "error": {
+                  "color": "red",
+                  "index": 1,
+                  "text": "ERROR"
+                },
+                "warn": {
+                  "color": "yellow",
+                  "index": 2,
+                  "text": "WARN"
+                },
+                "info": {
+                  "color": "transparent",
+                  "index": 3,
+                  "text": "INFO"
+                },
+                "debug": {
+                  "color": "transparent",
+                  "index": 4,
+                  "text": "DEBUG"
+                }
+              }
+            }
+          ],
+          "noValue": "No data - check time range",
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              {
+                "color": "green",
+                "value": 0
+              },
+              {
+                "color": "red",
+                "value": 80
+              }
+            ]
+          }
+        },
+        "overrides": [
+          {
+            "matcher": {
+              "id": "byName",
+              "options": "Time"
+            },
+            "properties": [
+              {
+                "id": "custom.width",
+                "value": 197
+              }
+            ]
+          },
+          {
+            "matcher": {
+              "id": "byName",
+              "options": "Level"
+            },
+            "properties": [
+              {
+                "id": "custom.width",
+                "value": 99
+              },
+              {
+                "id": "custom.cellOptions",
+                "value": {
+                  "applyToRow": true,
+                  "mode": "gradient",
+                  "type": "color-background"
+                }
+              }
+            ]
+          },
+          {
+            "matcher": {
+              "id": "byName",
+              "options": "Logger"
+            },
+            "properties": [
+              {
+                "id": "custom.width",
+                "value": 269
+              }
+            ]
+          },
+          {
+            "matcher": {
+              "id": "byName",
+              "options": "Component"
+            },
+            "properties": [
+              {
+                "id": "custom.width",
+                "value": 310
+              }
+            ]
+          }
+        ]
+      },
+      "gridPos": {
+        "h": 23,
+        "w": 24,
+        "x": 0,
+        "y": 0
+      },
+      "id": 1,
+      "options": {
+        "cellHeight": "sm",
+        "footer": {
+          "countRows": false,
+          "enablePagination": true,
+          "fields": "",
+          "reducer": [
+            "sum"
+          ],
+          "show": false
+        },
+        "showHeader": true,
+        "sortBy": []
+      },
+      "pluginVersion": "12.1.0",
+      "targets": [
+        {
+          "datasource": {
+            "type": "loki",
+            "uid": "${DS_LOKI}"
+          },
+          "direction": "backward",
+          "editorMode": "code",
+          "expr": "{app=\"$application\", environment=\"$environment\", component=\"global-scheduler\"} | json | __error__ != \"JSONParserErr\"",
+          "key": "Q-8ecbdd88-d655-4837-968a-007a7fae03b2-0",
+          "queryType": "range",
+          "refId": "logs"
+        }
+      ],
+      "transformations": [
+        {
+          "id": "extractFields",
+          "options": {
+            "source": "labels"
+          }
+        },
+        {
+          "id": "organize",
+          "options": {
+            "excludeByName": {},
+            "includeByName": {
+              "Line": false,
+              "Time": true,
+              "app": false,
+              "commitDate": false,
+              "component": false,
+              "component_extracted": true,
+              "configName": false,
+              "elapsed": false,
+              "error": false,
+              "gitComment": false,
+              "job_id": false,
+              "labelTypes": false,
+              "lastHash": false,
+              "level": true,
+              "loggerName": false,
+              "loggerName 2": false,
+              "message": true,
+              "newHash": false,
+              "portalInstance": false,
+              "remoteHash": false,
+              "repository": false,
+              "shortLogger": true,
+              "size": false,
+              "tenant": false,
+              "tsNs": false
+            },
+            "indexByName": {
+              "Line": 7,
+              "Time": 0,
+              "app": 2,
+              "archivesDir": 33,
+              "branch": 35,
+              "commitDate": 40,
+              "component": 11,
+              "component_extracted": 4,
+              "configName": 24,
+              "container": 12,
+              "detected_level": 13,
+              "elapsed": 38,
+              "error": 32,
+              "gitComment": 41,
+              "id": 10,
+              "index_name": 25,
+              "instance": 14,
+              "job": 15,
+              "job_id": 22,
+              "labelTypes": 9,
+              "labels": 6,
+              "lastHash": 27,
+              "level": 3,
+              "message": 5,
+              "namespace": 16,
+              "newHash": 39,
+              "node_name": 17,
+              "num_completed_jobs": 28,
+              "num_jobs_deleted": 31,
+              "num_jobs_running": 29,
+              "pod": 18,
+              "projectDir": 36,
+              "queue": 30,
+              "ref": 23,
+              "remoteHash": 26,
+              "repoDir": 34,
+              "repository": 37,
+              "service_name": 19,
+              "size": 42,
+              "tenant": 1,
+              "time": 21,
+              "tsNs": 8,
+              "version": 20
+            },
+            "renameByName": {
+              "component_extracted": "Component",
+              "level": "Level",
+              "loggerName": "Logger",
+              "message": "Message",
+              "shortLogger": "Logger"
+            }
+          }
+        }
+      ],
+      "type": "table"
+    }
+  ],
+  "schemaVersion": 41,
+  "tags": [
+    "identity-observability",
+    "logging",
+    "global-scheduler"
+  ],
+  "templating": {
+    "list": [
+      {
+        "hide": 2,
+        "name": "DS_LOKI",
+        "options": [],
+        "query": "loki",
+        "refresh": 1,
+        "regex": "",
+        "type": "datasource"
+      },
+      {
+        "allowCustomValue": false,
+        "current": {},
+        "datasource": {
+          "type": "loki",
+          "uid": "${DS_LOKI}"
+        },
+        "definition": "",
+        "description": "",
+        "label": "Environment",
+        "name": "environment",
+        "options": [],
+        "query": {
+          "label": "environment",
+          "refId": "LokiVariableQueryEditor-VariableQuery",
+          "stream": "",
+          "type": 1
+        },
+        "refresh": 1,
+        "regex": "",
+        "sort": 1,
+        "type": "query"
+      },
+      {
+        "hide": 2,
+        "label": "Application",
+        "name": "application",
+        "query": "identity-observability",
+        "skipUrlSync": true,
+        "type": "constant",
+        "current": {
+          "value": "identity-observability",
+          "text": "identity-observability",
+          "selected": false
+        },
+        "options": [
+          {
+            "value": "identity-observability",
+            "text": "identity-observability",
+            "selected": false
+          }
+        ]
+      }
+    ]
+  },
+  "time": {
+    "from": "now-30m",
+    "to": "now"
+  },
+  "timepicker": {
+    "refresh_intervals": [
+      "30s",
+      "1m",
+      "5m",
+      "30m",
+      "1h"
+    ]
+  },
+  "timezone": "browser",
+  "title": "Logs - Global Scheduler",
+  "uid": "ido-logs-global-scheduler",
+  "version": 20,
+  "weekStart": ""
+}
